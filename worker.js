@@ -8,7 +8,7 @@ const secondCheckRegEx = new RegExp(/^[+]*[(]{0,1}[0-9]{1,3}[)]{0,1}[-\s\./0-9]*
 const emailCheckRegEx = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
 
 process.on('message', function (m) {
-    parse(m.link, (response) => {
+    parsePage(m.link, (response) => {
         process.send(response);
     });
 });
@@ -16,18 +16,18 @@ process.on('message', function (m) {
 /**
  * Запрос на получение контента страницы
  */
-function parse(link, callback) {
+function parsePage(link, callback) {
     request(`http://${link}/`, {timeout: 20000}, function (err, res, body) {
         if (err) {
             if (err.code === 'ETIMEDOUT') {
                 request(`https://${link}/`, {timeout: 20000}, function (err, res, body) {
                     if (err) {
-                        callback({phones: 'Не найден', emails: 'Не найден', error: "Сайт не доступен!", link: link});
+                        callback({phones: null, emails: null, error: "Сайт не доступен!", link: link});
                     }
                     callback(parseBody(body, link));
                 })
             } else {
-                callback({phones: 'Не найден', emails: 'Не найден', error: "Сайт не доступен!", link: link});
+                callback({phones: null, emails: null, error: "Сайт не доступен!", link: link});
             }
         } else {
             callback(parseBody(body, link));
@@ -44,9 +44,9 @@ function parseBody(content, link) {
         const text = clearContent(content);
         const phones = clear(getFirstResult(text));
         const emails = getEmails(text);
-        return {phones: phones.join(', '), emails: emails.join(','), link: link, error: ''};
+        return {phones: phones, emails: emails, link: link, error: ''};
     } else {
-        return {phones: 'Не найден', emails: 'Не найден', error: "Сайт не доступен!", link: link};
+        return {phones: null, emails: null, error: "Сайт не доступен!", link: link};
     }
 }
 
@@ -84,14 +84,18 @@ function getFirstResult(content) {
  */
 function clear(items) {
     return items.filter((item) => {
-        const spaceCheck = item.match(/\s/g) || [];
-        const dashCheck = item.match(/\-/g) || [];
+        const spaceCheck = item.match(/\s/g);
+        const dashCheck = item.match(/\-/g);
+        const plusCheck = item.match(/\+/g);
+        const bracketCheck = item.match(/\(/g);
 
         if (firstCheckRegEx.test(item)) {
-            return !!(spaceCheck.length || dashCheck.length);
+            return (!item.match(/\=/g) && !item.match(/\:/g)) && !!(spaceCheck || dashCheck || plusCheck || bracketCheck);
         } else {
             if (secondCheckRegEx.test(item)) {
-                return !!(spaceCheck.length || dashCheck.length);
+                return (!item.match(/\=/g) && !item.match(/\:/g)) && !!(spaceCheck || dashCheck || plusCheck || bracketCheck);
+            } else {
+                return null;
             }
         }
     });

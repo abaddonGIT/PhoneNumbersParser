@@ -14,7 +14,7 @@ const formidable = require('formidable');
 const fs = require('fs');
 const Parser = require('node-xlsx');
 const computecluster = require('compute-cluster');
-const cc = new computecluster({module: './worker.js'});
+let cc = null;
 
 let workArray = [];
 let ioClient = null;
@@ -25,8 +25,8 @@ let threds = [];
 let totalCount = 0;
 let currentIndex = 0;
 
-app.use(bodyParser.urlencoded({extended: true, limit: '100mb'}));
-app.use(bodyParser.json({limit: '100mb'}));
+app.use(bodyParser.urlencoded({extended: true, limit: '200mb'}));
+app.use(bodyParser.json({limit: '200mb'}));
 
 app.use(morgan('dev'));
 //Статические файлы
@@ -90,6 +90,7 @@ app.post('/upload', function (req, res) {
  * Начинаем парсинг
  */
 function startParse() {
+    cc = new computecluster({module: './worker.js'});
     let limit = 15;
     totalCount = workArray.length;
     while (limit--) {
@@ -107,6 +108,7 @@ function runNext() {
     if (link) {
         threds.push(1);
         cc.enqueue({link: link}, function (error, result) {
+            // console.error(result);
             resultArray.push(result);
             delete progressList[result.link];
             ioClient.emit('progress', progressList, totalCount, ++currentIndex);
@@ -118,6 +120,7 @@ function runNext() {
             ioClient.emit('end', resultArray);
             isEnd = true;
             generateLink();
+            cc.exit();
         }
     }
 }
@@ -128,13 +131,22 @@ io.on('connection', function (client) {
     client.on('join', function (data) {
         console.log(data);
     });
+
+    // cc.enqueue({link: 'liketon.ru'}, function (error, result) {
+    //     // resultArray.push(result);
+    //     // delete progressList[result.link];
+    //     // ioClient.emit('progress', progressList, totalCount, ++currentIndex);
+    //     // threds.shift();
+    //     // runNext();
+    // });
 });
 
 
 //Генерация csv файла
 function generateLink() {
     try {
-        const result = json2csv({del: ';', data: resultArray, fields: ['link', 'phones', 'emails', 'error']});
+        const result = manyColumns();
+
         clearDir(__dirname + '/public/download/').then(() => {
             fs.writeFile(__dirname + '/public/download/result.csv', result, function (err) {
                 let link = null;
@@ -148,6 +160,59 @@ function generateLink() {
         console.error(err);
         res.send({success: false, message: "Ошибка при генерации файла!", data: null});
     }
+}
+
+/**
+ * Только телефоны в одну колонку
+ */
+function onlyPhones() {
+    const fields = ['phone'];
+    let phones = [];
+    for (let i = 0, ln = resultArray.length; i < ln; i++) {
+        const item = resultArray[i];
+        if (Array.isArray(item.phones)) {
+            item.phones.forEach((phone) => {
+                phones.push({phone: phone.trim()});
+            });
+        }
+    }
+    resultArray = [];
+    return json2csv({del: ';', data: phones, fields: fields});
+}
+
+/**
+ * Бъет результат по колонкам
+ */
+function manyColumns() {
+    const fields = ['link', 'phone_0', 'phone_1', 'phone_2', 'phone_3', 'phone_4', 'email_0', 'email_1', 'email_2', 'error'];
+    for (let i = 0, ln = resultArray.length; i < ln; i++) {
+        const item = resultArray[i];
+        let newItem = {};
+        newItem.link = item.link;
+        newItem.error = item.error;
+        //Телефоны
+        if (Array.isArray(item.phones) && item.phones.length) {
+            for (let i = 0; i < 5; i++) {
+                newItem['phone_' + i] = item.phones[i] ? item.phones[i] : "Не найдено";
+            }
+        } else {
+            for (let i = 0; i < 5; i++) {
+                newItem['phone_' + i] = "Не найдено";
+            }
+        }
+        //Emails
+        if (Array.isArray(item.emails) && item.emails.length) {
+            for (let i = 0; i < 3; i++) {
+                newItem['email_' + i] = item.emails[i] ? item.emails[i] : "Не найдено";
+            }
+        } else {
+            for (let i = 0; i < 3; i++) {
+                newItem['email_' + i] = "Не найдено";
+            }
+        }
+        resultArray[i] = newItem;
+    }
+    return json2csv({del: ';', data: resultArray, fields: fields});
 }
 
 /**
