@@ -1,0 +1,121 @@
+html {
+  font-size: 10px;
+
+  body {
+    font-size: 1.4rem;
+  }
+}
+
+body, html {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #E0F7FA;
+  font-family: "Comic Sans MS", sans-serif;
+}
+
+.c-wrap {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  &_text {
+    font-weight: 700;
+    font-size: 26px;
+  }
+}
+
+.c-link {
+  font-size: 1.8rem;
+  text-align: center;
+  display: block;
+  color: black;
+}
+
+.c-list {
+  padding: 0;
+
+  li {
+    display: block;
+    text-align: center;
+    padding: 10px;
+    font-size: 1.8rem;
+    text-transform: uppercase;
+    background-color: #FFE0B2;
+    color: black;
+
+    &.c-last {
+      background-color: #FF7043;
+    }
+  }
+}
+
+.c-form {
+  background-color: #fff;
+  padding: 100px 50px;
+  outline: 2px dashed #BBDEFB;
+  outline-offset: -15px;
+  max-width: 50%;
+  width: 100%;
+  transition: transform 0.5s;
+
+  label {
+    font-size: 1.8rem;
+    text-align: center;
+    display: block;
+    cursor: pointer;
+  }
+
+  .c-icon {
+    display: none;
+  }
+
+  .c-upload {
+    display: block;
+  }
+
+  &.is-loading {
+    .c-upload {
+      display: none;
+    }
+
+    .c-loading {
+      display: block;
+      text-align: center;
+    }
+  }
+
+  &.has-grad {
+    transform: scale(0.8);
+    outline-color: #EF6C00;
+
+    .c-form_icon {
+      fill: #EF6C00;
+    }
+  }
+
+  &_input {
+    position: relative;
+  }
+
+  &_icon {
+    width: 100%;
+    height: 80px;
+    fill: #92b0b3;
+    display: block;
+    margin-bottom: 40px;
+  }
+
+  input {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+  }
+}

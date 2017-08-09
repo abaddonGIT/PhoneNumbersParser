@@ -1,0 +1,36 @@
+doctype html
+html(lang="ru-RU")
+    head
+        meta(charset='utf-8')
+        meta(name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, minimal-ui')
+        meta(http-equiv='X-UA-Compatible' content='IE=edge')
+        meta(name='imagetoolbar' content='no')
+        meta(name='msthemecompatible' content='no')
+        meta(name='cleartype' content='on')
+        meta(name='HandheldFriendly' content='True')
+        meta(name='format-detection' content='telephone=no')
+        meta(name='format-detection' content='address=no')
+        meta(name='google' value='notranslate')
+        meta(name='theme-color' content='#ffffff')
+        link(href="https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css", rel="stylesheet", type="text/css")
+        link(href="css/style.css", rel="stylesheet", type="text/css")
+    body
+        .c-wrap
+            form.c-form.js-drop
+                .c-form_input
+                    .c-upload.c-icon
+                        include ../public/images/svg/upload.svg
+                        label
+                            input(type="file", name="xmlFile")#upload
+                            | Выбрать файл
+                    .c-loading.c-icon
+                        include ../public/images/svg/Flickr.svg
+                        h2
+                            | В работе:
+                        ul.js-in-work.c-list
+            p.c-wrap_text
+                | Закинте или выберите файл (Допускается только с расширением xls)
+        footer
+            script(src="http://code.jquery.com/jquery-3.2.1.min.js", integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=", crossorigin="anonymous")
+            script(src="/socket.io/socket.io.js")
+            script(src="js/app.js")
